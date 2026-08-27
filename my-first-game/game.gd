@@ -264,15 +264,16 @@ func collect_at_player() -> void:
 		status("MAZE CLEARED! +500", 1.5)
 
 func move_cats() -> void:
+	var step_seconds := 0.34 if power_left > 0.0 else 0.19
 	for cat in cats:
 		if cat.respawn > 0.0:
-			cat.respawn -= cat_step_left
+			cat.respawn -= step_seconds
 			if cat.respawn <= 0.0:
 				cat.pos = Vector2i(14, 7)
 				cat.frozen = 0.7
 			continue
 		if cat.frozen > 0.0:
-			cat.frozen -= cat_step_left
+			cat.frozen -= step_seconds
 			continue
 		var options: Array[Vector2i] = []
 		for d in DIRS:
@@ -281,10 +282,31 @@ func move_cats() -> void:
 		if options.is_empty(): continue
 		if power_left > 0.0:
 			options.sort_custom(func(a, b): return a.distance_squared_to(player) > b.distance_squared_to(player))
+			cat.pos = options[0]
 		else:
-			options.sort_custom(func(a, b): return a.distance_squared_to(player) < b.distance_squared_to(player))
-		cat.pos = options[0] if rng.randf() < 0.78 else options[rng.randi_range(0, options.size() - 1)]
+			# Breadth-first pathfinding lets cats chase Luna around maze walls.
+			cat.pos = next_step_toward(cat.pos, player)
 	check_cat_collisions()
+
+func next_step_toward(start: Vector2i, target: Vector2i) -> Vector2i:
+	if start == target: return start
+	var frontier: Array[Vector2i] = [start]
+	var came_from: Dictionary = {start: start}
+	var cursor := 0
+	while cursor < frontier.size():
+		var current := frontier[cursor]
+		cursor += 1
+		if current == target: break
+		for direction in DIRS:
+			var next: Vector2i = current + direction
+			if is_open(next) and not came_from.has(next):
+				came_from[next] = current
+				frontier.append(next)
+	if not came_from.has(target): return start
+	var step := target
+	while came_from[step] != start:
+		step = came_from[step]
+	return step
 
 func check_cat_collisions() -> void:
 	for cat in cats:
