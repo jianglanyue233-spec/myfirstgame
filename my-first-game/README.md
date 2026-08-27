@@ -20,3 +20,9 @@ Open `project.godot` with Godot 4.7.2 and press **F6/F5**.
 
 This prototype uses generated shapes so it is immediately playable without waiting for final art or audio assets.
 
+## Play in a browser
+
+The repository includes a GitHub Actions workflow that exports the Godot project for Web and deploys it to GitHub Pages. In the repository settings, select **Pages > Build and deployment > Source: GitHub Actions** once. The public game URL will then be:
+
+`https://jianglanyue233-spec.github.io/myfirstgame/`
+
