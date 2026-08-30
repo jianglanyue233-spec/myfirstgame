@@ -418,7 +418,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0,0,W,H),overlay)
 	# HUD after overlay.
 	draw_string(ThemeDB.fallback_font,Vector2(18,20),"ROOM %d/6  %s"%[level_index+1,levels[level_index].name],HORIZONTAL_ALIGNMENT_LEFT,-1,13,GOLD)
-	draw_string(ThemeDB.fallback_font,Vector2(330,20),"SHADOW" if in_shadow else "REALITY",HORIZONTAL_ALIGNMENT_LEFT,-1,13,MOON if in_shadow else WHITE)
+	draw_string(ThemeDB.fallback_font,Vector2(330,20),"SHADOW" if in_shadow else "REALITY",HORIZONTAL_ALIGNMENT_LEFT,-1,13,MOON if in_shadow else Color.WHITE)
 	draw_string(ThemeDB.fallback_font,Vector2(18,252),levels[level_index].hint,HORIZONTAL_ALIGNMENT_LEFT,450,11,Color("c6bbd5"))
 	if message_left>0.0:
 		draw_rect(Rect2(115,28,250,24),Color(0.03,0.02,0.08,0.9))
