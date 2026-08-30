@@ -40,7 +40,7 @@ var button: Button
 var levels := [
 	{"name":"THE FIRST BRIDGE", "hint":"Move the lamp left of the box, then enter the shadow.", "kind":"exit",
 	 "floors":[Vector2(20,155),Vector2(325,460)], "lights":[60.0],
-	 "objects":[{"type":"box","x":174.0,"height":44.0}], "exit":430.0},
+	 "objects":[{"type":"box","x":150.0,"height":50.0}], "exit":430.0},
 	{"name":"TWO LIGHTS", "hint":"Cast one shadow right and the other left until they meet.", "kind":"exit",
 	 "floors":[Vector2(20,135),Vector2(350,460)], "lights":[48.0,432.0],
 	 "objects":[{"type":"box","x":146.0,"height":38.0},{"type":"box","x":338.0,"height":38.0}], "exit":430.0},
