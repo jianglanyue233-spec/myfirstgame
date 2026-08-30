@@ -6,6 +6,7 @@ on:
     paths:
       - "my-first-game/**"
       - "moon-thread/**"
+      - "shadow-lantern/**"
       - ".github/workflows/deploy-web.yml"
   workflow_dispatch:
 
@@ -62,6 +63,12 @@ jobs:
         run: |
           "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" --headless --path moon-thread --export-release Web ../build/web/moon-thread/index.html
           test -s build/web/moon-thread/index.html
+
+      - name: Export Shadow Lantern
+        run: |
+          mkdir -p build/web/shadow-lantern
+          "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" --headless --path shadow-lantern --export-release Web ../build/web/shadow-lantern/index.html
+          test -s build/web/shadow-lantern/index.html
 
       - name: Upload web build
         uses: actions/upload-pages-artifact@v3
