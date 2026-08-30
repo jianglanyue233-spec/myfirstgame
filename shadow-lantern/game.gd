@@ -22,6 +22,7 @@ var objects: Array[Dictionary] = []
 var floors: Array[Vector2] = []
 var active_light := 0
 var dragging := -1
+var riding_cat := -1
 var message := ""
 var message_left := 0.0
 var paused := false
@@ -44,7 +45,7 @@ var levels := [
 	{"name":"TWO LIGHTS", "hint":"Cast one shadow right and the other left until they meet.", "kind":"exit",
 	 "floors":[Vector2(20,135),Vector2(350,460)], "lights":[48.0,432.0],
 	 "objects":[{"type":"box","x":146.0,"height":38.0},{"type":"box","x":338.0,"height":38.0}], "exit":430.0},
-	{"name":"CATWALK", "hint":"Enter the moving cat shadow and keep pace with it.", "kind":"exit",
+	{"name":"CATWALK", "hint":"Wait at the left edge. Touch the cat shadow moving right to ride it.", "kind":"exit",
 	 "floors":[Vector2(20,150),Vector2(365,460)], "lights":[38.0],
 	 "objects":[{"type":"cat","x":148.0,"height":28.0,"min":145.0,"max":350.0,"speed":24.0,"dir":1.0}], "exit":430.0},
 	{"name":"GROWING DARK", "hint":"Press G three times. A taller plant casts a longer road.", "kind":"exit",
@@ -147,6 +148,7 @@ func start_level() -> void:
 	shadow_x = real_x
 	active_light = 0
 	dragging = -1
+	riding_cat = -1
 	particles.clear()
 	var data: Dictionary = levels[level_index]
 	floors.clear()
@@ -252,19 +254,30 @@ func grow_plants() -> void:
 	else: show_message("NO PLANT CAN GROW FURTHER", 0.8)
 
 func update_moving_objects(delta: float) -> void:
-	for object in objects:
+	for i in objects.size():
+		var object := objects[i]
 		if object.type == "cat":
 			object.x += object.speed * object.dir * delta
 			if object.x >= object.max:
 				object.x = object.max
 				object.dir = -1.0
+				if riding_cat == i:
+					riding_cat = -1
+					shadow_x = object.x
+					show_message("THE CAT BROUGHT YOU ACROSS — MOVE RIGHT", 1.4)
 			elif object.x <= object.min:
 				object.x = object.min
 				object.dir = 1.0
+			if in_shadow and riding_cat < 0 and object.dir > 0.0 and absf(shadow_x - object.x) <= 18.0:
+				riding_cat = i
+				show_message("RIDING THE CAT'S SHADOW", 1.1)
+			if riding_cat == i:
+				shadow_x = object.x
 	if in_shadow and not is_walkable(shadow_x): fall_from_shadow()
 
 func fall_from_shadow() -> void:
 	in_shadow = false
+	riding_cat = -1
 	real_x = 60.0
 	shadow_x = real_x
 	show_message("THE SHADOW MOVED AWAY — TRY AGAIN", 1.4)
