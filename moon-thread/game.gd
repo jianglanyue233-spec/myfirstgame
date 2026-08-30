@@ -45,7 +45,7 @@ var level_data := [
 	{"name":"HEARTBEAT", "hint":"Connect three hearts", "color":PINK, "limit":560.0,
 	 "points":[Vector2(240,210),Vector2(155,145),Vector2(205,90),Vector2(240,130),Vector2(275,90),Vector2(325,145)],
 	 "symbols":["START","HEART","HEART","HEART","HEART","HEART"]},
-	{"name":"FALLING STAR", "hint":"Trace the star path", "color":GOLD, "limit":650.0,
+	{"name":"FALLING STAR", "hint":"Trace the star path", "color":GOLD, "limit":1120.0,
 	 "points":[Vector2(110,205),Vector2(240,70),Vector2(370,205),Vector2(160,125),Vector2(320,125),Vector2(110,205)],
 	 "symbols":["START","STAR","STAR","STAR","STAR","STAR"]},
 	{"name":"CRESCENT", "hint":"Wake the moon", "color":BLUE, "limit":610.0,
@@ -54,7 +54,7 @@ var level_data := [
 	{"name":"BUTTERFLY", "hint":"Cross the thread to tie a knot", "color":PURPLE, "limit":760.0,
 	 "points":[Vector2(240,215),Vector2(145,170),Vector2(150,75),Vector2(240,140),Vector2(330,75),Vector2(335,170),Vector2(240,140),Vector2(240,215)],
 	 "symbols":["START","GEM","STAR","KNOT","STAR","GEM","KNOT","FLOWER"]},
-	{"name":"MOON CROWN", "hint":"Complete the garden sigil", "color":Color("ff9fe5"), "limit":900.0,
+	{"name":"MOON CROWN", "hint":"Complete the garden sigil", "color":Color("ff9fe5"), "limit":1120.0,
 	 "points":[Vector2(80,210),Vector2(110,95),Vector2(180,155),Vector2(240,70),Vector2(300,155),Vector2(370,95),Vector2(400,210),Vector2(240,180),Vector2(80,210)],
 	 "symbols":["START","MOON","HEART","STAR","HEART","MOON","GEM","CROWN","FLOWER"]}
 ]
@@ -133,7 +133,7 @@ func start_level() -> void:
 	thread_used = 0.0
 	thread_limit = data.limit
 	remaining = ROUND_TIME
-	cat_delay = 4.0
+	cat_delay = 7.0
 	cat_tick = 0.0
 	cat_stun = 0.0
 	pulse_cooldown = 0.0
