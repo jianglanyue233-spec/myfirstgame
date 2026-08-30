@@ -12,3 +12,5 @@ A five-level Godot 4.7.2 prototype about drawing magical patterns by walking whi
 
 Connect the glowing nodes in the displayed order before the 60-second timer or thread supply runs out. Crossing your own thread creates a Magic Knot that freezes the Thread Eater. Complete all five patterns to awaken the Moon Garden.
 
+At the end of a full run, the game displays a gallery of the player's actual five paths. A persistent browser-local leaderboard records player name, total thread used in meters, and total Magic Knots; lower thread usage ranks first, with more knots breaking ties.
+
