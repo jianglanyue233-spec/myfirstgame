@@ -13,12 +13,13 @@ const PINK := Color("ff78bb")
 const BLUE := Color("6ce5ff")
 const PURPLE := Color("a87cff")
 
-enum State { MENU, PLAYING, LEVEL_CLEAR, GAME_CLEAR, FAILED }
+enum State { MENU, PLAYING, LEVEL_CLEAR, GAME_CLEAR, FAILED, LEADERBOARD }
 
 var state := State.MENU
 var level_index := 0
 var player := Vector2.ZERO
 var trail: PackedVector2Array = []
+var drawn_path: PackedVector2Array = []
 var knots: Array[Vector2] = []
 var nodes: Array[Dictionary] = []
 var next_node := 1
@@ -35,11 +36,16 @@ var pause_requested := false
 var message := ""
 var message_left := 0.0
 var particles: Array[Dictionary] = []
+var level_records: Array[Dictionary] = []
+var leaderboard: Array[Dictionary] = []
+var player_name := "LUNA"
 var rng := RandomNumberGenerator.new()
 
 var title_label: Label
 var info_label: Label
+var name_edit: LineEdit
 var button: Button
+var secondary_button: Button
 
 var level_data := [
 	{"name":"HEARTBEAT", "hint":"Connect three hearts", "color":PINK, "limit":560.0,
@@ -61,6 +67,7 @@ var level_data := [
 
 func _ready() -> void:
 	rng.randomize()
+	load_save()
 	build_ui()
 	show_menu()
 
@@ -82,11 +89,23 @@ func build_ui() -> void:
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_label.add_theme_font_size_override("font_size", 13)
 	layer.add_child(info_label)
+	name_edit = LineEdit.new()
+	name_edit.position = Vector2(155, 174)
+	name_edit.size = Vector2(170, 28)
+	name_edit.placeholder_text = "TYPE NAME"
+	name_edit.max_length = 12
+	name_edit.text = player_name
+	layer.add_child(name_edit)
 	button = Button.new()
-	button.position = Vector2(155, 202)
-	button.size = Vector2(170, 36)
+	button.position = Vector2(155, 207)
+	button.size = Vector2(170, 30)
 	button.pressed.connect(_on_button)
 	layer.add_child(button)
+	secondary_button = Button.new()
+	secondary_button.position = Vector2(155, 241)
+	secondary_button.size = Vector2(170, 25)
+	secondary_button.pressed.connect(_on_secondary)
+	layer.add_child(secondary_button)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -98,36 +117,66 @@ func _input(event: InputEvent) -> void:
 
 func show_menu() -> void:
 	state = State.MENU
+	set_default_ui_positions()
 	title_label.visible = true
 	info_label.visible = true
+	name_edit.visible = true
 	button.visible = true
+	secondary_button.visible = true
 	title_label.text = "MOON THREAD"
 	info_label.text = "Draw magical patterns by walking.\nProtect your glowing thread from the Thread Eater."
 	button.text = "BEGIN WEAVING"
+	secondary_button.text = "LEADERBOARD"
 	queue_redraw()
 
 func _on_button() -> void:
 	match state:
-		State.MENU, State.GAME_CLEAR:
+		State.MENU:
+			player_name = name_edit.text.strip_edges().to_upper()
+			if player_name.is_empty(): player_name = "LUNA"
 			level_index = 0
+			level_records.clear()
 			start_level()
+		State.GAME_CLEAR:
+			show_leaderboard()
+		State.LEADERBOARD:
+			show_menu()
 		State.LEVEL_CLEAR:
 			level_index += 1
 			start_level()
 		State.FAILED:
 			start_level()
 
+func _on_secondary() -> void:
+	if state == State.MENU:
+		show_leaderboard()
+	elif state == State.GAME_CLEAR or state == State.LEADERBOARD:
+		show_menu()
+
+func set_default_ui_positions() -> void:
+	title_label.position = Vector2(45, 63)
+	title_label.size = Vector2(390, 45)
+	info_label.position = Vector2(65, 112)
+	info_label.size = Vector2(350, 70)
+	button.position = Vector2(155, 207)
+	button.size = Vector2(170, 30)
+	secondary_button.position = Vector2(155, 241)
+	secondary_button.size = Vector2(170, 25)
+
 func start_level() -> void:
 	state = State.PLAYING
 	title_label.visible = false
 	info_label.visible = false
+	name_edit.visible = false
 	button.visible = false
+	secondary_button.visible = false
 	nodes.clear()
 	var data: Dictionary = level_data[level_index]
 	for i in data.points.size():
 		nodes.append({"pos":data.points[i], "symbol":data.symbols[i], "lit":i == 0})
 	player = nodes[0].pos
 	trail = PackedVector2Array([player])
+	drawn_path = PackedVector2Array([player])
 	knots.clear()
 	next_node = 1
 	thread_used = 0.0
@@ -185,6 +234,7 @@ func move_player(delta: float) -> void:
 	if trail.is_empty() or player.distance_to(trail[-1]) >= THREAD_STEP:
 		var segment_start: Vector2 = trail[-1]
 		trail.append(player)
+		drawn_path.append(player)
 		thread_used += segment_start.distance_to(player)
 		check_intersection(segment_start, player)
 	check_node_connection(old)
@@ -196,6 +246,7 @@ func check_node_connection(_old: Vector2) -> void:
 		nodes[next_node].lit = true
 		player = target
 		trail.append(target)
+		drawn_path.append(target)
 		burst(target, level_data[level_index].color)
 		next_node += 1
 		show_message("NODE AWAKENED %d/%d" % [next_node, nodes.size()], 0.9)
@@ -242,29 +293,84 @@ func cast_pulse() -> void:
 	show_message("MOON PULSE!", 1.0)
 
 func complete_level() -> void:
+	level_records.append({"name":level_data[level_index].name, "path":drawn_path.duplicate(), "knots":knots.duplicate(), "meters":thread_used / 100.0, "color":level_data[level_index].color})
 	state = State.LEVEL_CLEAR if level_index < level_data.size() - 1 else State.GAME_CLEAR
 	burst(player, GOLD, 30)
 	title_label.visible = true
 	info_label.visible = true
+	name_edit.visible = false
 	button.visible = true
+	secondary_button.visible = false
 	if state == State.LEVEL_CLEAR:
 		title_label.text = "PATTERN AWAKENED"
 		info_label.text = "%s glows in the Moon Garden.\nMagic knots created: %d" % [level_data[level_index].name, knots.size()]
 		button.text = "NEXT PATTERN"
 	else:
+		var total_meters := 0.0
+		var total_knots := 0
+		for record in level_records:
+			total_meters += record.meters
+			total_knots += record.knots.size()
+		leaderboard.append({"name":player_name, "meters":snappedf(total_meters, 0.01), "knots":total_knots})
+		leaderboard.sort_custom(func(a, b): return a.meters < b.meters if not is_equal_approx(a.meters, b.meters) else a.knots > b.knots)
+		if leaderboard.size() > 10: leaderboard.resize(10)
+		save_game()
+		title_label.position = Vector2(60, 5)
+		title_label.size = Vector2(360, 34)
+		info_label.position = Vector2(70, 202)
+		info_label.size = Vector2(340, 28)
+		button.position = Vector2(155, 234)
+		button.size = Vector2(170, 30)
 		title_label.text = "THE GARDEN AWAKENS"
-		info_label.text = "Five moon patterns join into one living constellation.\nYou wove the light back into the world."
-		button.text = "WEAVE AGAIN"
+		info_label.text = "%s used %.2f m of thread and tied %d Magic Knots" % [player_name, total_meters, total_knots]
+		button.text = "VIEW LEADERBOARD"
+		secondary_button.visible = false
 
 func fail_level(reason: String) -> void:
 	if state != State.PLAYING: return
 	state = State.FAILED
 	title_label.visible = true
 	info_label.visible = true
+	name_edit.visible = false
 	button.visible = true
+	secondary_button.visible = false
 	title_label.text = "THREAD BROKEN"
 	info_label.text = reason + "\nTry a shorter route or create a Magic Knot."
 	button.text = "RETRY PATTERN"
+
+func show_leaderboard() -> void:
+	state = State.LEADERBOARD
+	title_label.visible = true
+	info_label.visible = true
+	name_edit.visible = false
+	button.visible = true
+	secondary_button.visible = false
+	title_label.position = Vector2(60, 20)
+	title_label.size = Vector2(360, 40)
+	info_label.position = Vector2(70, 62)
+	info_label.size = Vector2(340, 155)
+	button.position = Vector2(155, 226)
+	button.size = Vector2(170, 32)
+	title_label.text = "THREAD WEAVERS"
+	var lines: Array[String] = ["RANK   WEAVER          THREAD     KNOTS"]
+	for i in mini(8, leaderboard.size()):
+		var entry: Dictionary = leaderboard[i]
+		lines.append("%2d     %-12s   %6.2f m     %2d" % [i + 1, entry.name, entry.meters, entry.knots])
+	if leaderboard.is_empty(): lines.append("\nComplete all five patterns to enter the ranking.")
+	info_label.text = "\n".join(lines)
+	button.text = "MAIN MENU"
+	queue_redraw()
+
+func save_game() -> void:
+	var file := FileAccess.open("user://moon_thread.save", FileAccess.WRITE)
+	file.store_string(JSON.stringify({"name":player_name, "leaderboard":leaderboard}))
+
+func load_save() -> void:
+	if not FileAccess.file_exists("user://moon_thread.save"): return
+	var data = JSON.parse_string(FileAccess.get_file_as_string("user://moon_thread.save"))
+	if data is Dictionary:
+		player_name = data.get("name", "LUNA")
+		leaderboard.assign(data.get("leaderboard", []))
 
 func show_message(text: String, duration: float) -> void:
 	message = text
@@ -300,6 +406,9 @@ func _draw() -> void:
 		var y := float((i * 47 + 29) % 260)
 		draw_circle(Vector2(x, y), 1.0, Color(0.55, 0.65, 1.0, 0.22))
 	if state != State.PLAYING:
+		if state == State.GAME_CLEAR:
+			draw_final_gallery()
+			return
 		draw_circle(Vector2(90, 76), 32, Color("34245e"))
 		draw_circle(Vector2(103, 67), 29, BG)
 		return
@@ -350,4 +459,28 @@ func _draw() -> void:
 	if paused:
 		draw_rect(Rect2(155, 108, 170, 54), Color(0.03,0.02,0.1,0.94))
 		draw_string(ThemeDB.fallback_font, Vector2(155, 142), "PAUSED", HORIZONTAL_ALIGNMENT_CENTER, 170, 23, GOLD)
+
+func draw_final_gallery() -> void:
+	var cards := [
+		Rect2(18, 40, 140, 74), Rect2(170, 40, 140, 74), Rect2(322, 40, 140, 74),
+		Rect2(94, 120, 140, 74), Rect2(246, 120, 140, 74)
+	]
+	for i in mini(level_records.size(), cards.size()):
+		var record: Dictionary = level_records[i]
+		var card: Rect2 = cards[i]
+		var color: Color = record.color
+		draw_rect(card, Color("181438"), true)
+		draw_rect(card, Color(color, 0.65), false, 1.0)
+		var mini_path := PackedVector2Array()
+		for point in record.path:
+			var normalized := (point - PLAY_RECT.position) / PLAY_RECT.size
+			mini_path.append(card.position + Vector2(7, 8) + normalized * Vector2(card.size.x - 14, card.size.y - 23))
+		if mini_path.size() >= 2:
+			draw_polyline(mini_path, Color(color, 0.18), 4.0, true)
+			draw_polyline(mini_path, color, 1.3, true)
+		for knot in record.knots:
+			var knot_normalized := (knot - PLAY_RECT.position) / PLAY_RECT.size
+			var knot_pos := card.position + Vector2(7, 8) + knot_normalized * Vector2(card.size.x - 14, card.size.y - 23)
+			draw_circle(knot_pos, 2.2, BLUE)
+		draw_string(ThemeDB.fallback_font, card.position + Vector2(5, card.size.y - 5), "%d. %s  %.2fm / %dK" % [i + 1, record.name, record.meters, record.knots.size()], HORIZONTAL_ALIGNMENT_LEFT, card.size.x - 10, 8, WHITE)
 
