@@ -302,8 +302,14 @@ func complete_level() -> void:
 	button.visible = true
 	secondary_button.visible = false
 	if state == State.LEVEL_CLEAR:
+		title_label.position = Vector2(60, 5)
+		title_label.size = Vector2(360, 34)
+		info_label.position = Vector2(70, 205)
+		info_label.size = Vector2(340, 28)
+		button.position = Vector2(155, 236)
+		button.size = Vector2(170, 30)
 		title_label.text = "PATTERN AWAKENED"
-		info_label.text = "%s glows in the Moon Garden.\nMagic knots created: %d" % [level_data[level_index].name, knots.size()]
+		info_label.text = "%s · %.2f m of thread · %d Magic Knots" % [level_data[level_index].name, thread_used / 100.0, knots.size()]
 		button.text = "NEXT PATTERN"
 	else:
 		var total_meters := 0.0
@@ -409,6 +415,9 @@ func _draw() -> void:
 		if state == State.GAME_CLEAR:
 			draw_final_gallery()
 			return
+		if state == State.LEVEL_CLEAR:
+			draw_level_result()
+			return
 		draw_circle(Vector2(90, 76), 32, Color("34245e"))
 		draw_circle(Vector2(103, 67), 29, BG)
 		return
@@ -459,6 +468,25 @@ func _draw() -> void:
 	if paused:
 		draw_rect(Rect2(155, 108, 170, 54), Color(0.03,0.02,0.1,0.94))
 		draw_string(ThemeDB.fallback_font, Vector2(155, 142), "PAUSED", HORIZONTAL_ALIGNMENT_CENTER, 170, 23, GOLD)
+
+func draw_level_result() -> void:
+	var color: Color = level_data[level_index].color
+	var frame := Rect2(70, 42, 340, 154)
+	draw_rect(frame, Color("181438"), true)
+	draw_rect(frame, Color(color, 0.75), false, 2.0)
+	var result_path := PackedVector2Array()
+	for point in drawn_path:
+		var normalized := (point - PLAY_RECT.position) / PLAY_RECT.size
+		result_path.append(frame.position + Vector2(14, 12) + normalized * Vector2(frame.size.x - 28, frame.size.y - 30))
+	if result_path.size() >= 2:
+		draw_polyline(result_path, Color(color, 0.2), 8.0, true)
+		draw_polyline(result_path, color, 2.5, true)
+	for knot in knots:
+		var knot_normalized := (knot - PLAY_RECT.position) / PLAY_RECT.size
+		var knot_pos := frame.position + Vector2(14, 12) + knot_normalized * Vector2(frame.size.x - 28, frame.size.y - 30)
+		draw_circle(knot_pos, 5.0, Color(BLUE, 0.25))
+		draw_circle(knot_pos, 2.4, BLUE)
+	draw_string(ThemeDB.fallback_font, Vector2(70, 193), "YOUR MOON THREAD", HORIZONTAL_ALIGNMENT_CENTER, 340, 10, GOLD)
 
 func draw_final_gallery() -> void:
 	var cards := [
