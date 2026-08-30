@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "my-first-game/**"
+      - "moon-thread/**"
       - ".github/workflows/deploy-web.yml"
   workflow_dispatch:
 
@@ -53,9 +54,14 @@ jobs:
 
       - name: Export web game
         run: |
-          mkdir -p build/web
+          mkdir -p build/web build/web/moon-thread
           "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" --headless --path my-first-game --export-release Web ../build/web/index.html
           test -s build/web/index.html
+
+      - name: Export Moon Thread
+        run: |
+          "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" --headless --path moon-thread --export-release Web ../build/web/moon-thread/index.html
+          test -s build/web/moon-thread/index.html
 
       - name: Upload web build
         uses: actions/upload-pages-artifact@v3
